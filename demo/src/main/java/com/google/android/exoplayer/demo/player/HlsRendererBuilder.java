@@ -143,11 +143,18 @@ public class HlsRendererBuilder implements RendererBuilder {
       MediaCodecVideoTrackRenderer videoRenderer = new MediaCodecVideoTrackRenderer(context,
           sampleSource, MediaCodecSelector.DEFAULT, MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT,
           5000, mainHandler, player, 50);
-      MediaCodecAudioTrackRenderer audioRenderer = new MediaCodecAudioTrackRenderer(sampleSource,
-          MediaCodecSelector.DEFAULT, null, true, player.getMainHandler(), player,
-          AudioCapabilities.getCapabilities(context), AudioManager.STREAM_MUSIC);
       MetadataTrackRenderer<List<Id3Frame>> id3Renderer = new MetadataTrackRenderer<>(
           sampleSource, new Id3Parser(), player, mainHandler.getLooper());
+
+      DataSource audioDataSource = new DefaultUriDataSource(context, bandwidthMeter, userAgent);
+      HlsChunkSource audioChunkSource = new HlsChunkSource(false /* isMaster */, audioDataSource, url,
+          manifest, DefaultHlsTrackSelector.newAlternativeAudioInstance(), bandwidthMeter,
+          timestampAdjusterProvider, HlsChunkSource.ADAPTIVE_MODE_SPLICE);
+      HlsSampleSource audioSampleSource = new HlsSampleSource(audioChunkSource, loadControl,
+          MAIN_BUFFER_SEGMENTS * BUFFER_SEGMENT_SIZE, mainHandler, player, DemoPlayer.TYPE_VIDEO);
+      MediaCodecAudioTrackRenderer audioRenderer = new MediaCodecAudioTrackRenderer(audioSampleSource,
+          MediaCodecSelector.DEFAULT, null, true, player.getMainHandler(), player,
+          AudioCapabilities.getCapabilities(context), AudioManager.STREAM_MUSIC);
 
       // Build the text renderer, preferring Webvtt where available.
       boolean preferWebvtt = false;

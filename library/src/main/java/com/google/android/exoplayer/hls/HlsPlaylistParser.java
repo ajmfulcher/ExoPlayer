@@ -141,6 +141,7 @@ public final class HlsPlaylistParser implements UriLoadable.Parser<HlsPlaylist> 
       throws IOException {
     ArrayList<Variant> variants = new ArrayList<>();
     ArrayList<Variant> subtitles = new ArrayList<>();
+    ArrayList<Variant> audio = new ArrayList<>();
     int bitrate = 0;
     String codecs = null;
     int width = -1;
@@ -153,6 +154,7 @@ public final class HlsPlaylistParser implements UriLoadable.Parser<HlsPlaylist> 
       line = iterator.next();
       if (line.startsWith(MEDIA_TAG)) {
         String type = HlsParserUtil.parseStringAttr(line, TYPE_ATTR_REGEX, TYPE_ATTR);
+        System.out.println("BLAH type is: " + type);
         if (SUBTITLES_TYPE.equals(type)) {
           // We assume all subtitles belong to the same group.
           String subtitleName = HlsParserUtil.parseStringAttr(line, NAME_ATTR_REGEX, NAME_ATTR);
@@ -161,6 +163,16 @@ public final class HlsPlaylistParser implements UriLoadable.Parser<HlsPlaylist> 
           Format format = new Format(subtitleName, MimeTypes.APPLICATION_M3U8, -1, -1, -1, -1, -1,
               -1, language, codecs);
           subtitles.add(new Variant(uri, format));
+        } else if (AUDIO_TYPE.equals(type)) {
+          String audioName = HlsParserUtil.parseStringAttr(line, NAME_ATTR_REGEX, NAME_ATTR);
+          String uri = HlsParserUtil.parseOptionalStringAttr(line, URI_ATTR_REGEX);
+          if (uri != null) {
+            String language = HlsParserUtil.parseOptionalStringAttr(line, LANGUAGE_ATTR_REGEX);
+            Format format = new Format(audioName, MimeTypes.APPLICATION_M3U8, -1, -1, -1, -1, -1,
+                -1, language, codecs);
+            audio.add(new Variant(uri, format));
+            System.out.println("BLAH audio details: name : " + audioName + " uri : " + uri + " language : " + language);
+          }
         } else {
           // TODO: Support other types of media tag.
         }
@@ -202,7 +214,7 @@ public final class HlsPlaylistParser implements UriLoadable.Parser<HlsPlaylist> 
         expectingStreamInfUrl = false;
       }
     }
-    return new HlsMasterPlaylist(baseUri, variants, subtitles);
+    return new HlsMasterPlaylist(baseUri, variants, subtitles, audio);
   }
 
   private static HlsMediaPlaylist parseMediaPlaylist(LineIterator iterator, String baseUri)

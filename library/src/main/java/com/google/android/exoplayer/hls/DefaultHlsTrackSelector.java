@@ -31,6 +31,7 @@ public final class DefaultHlsTrackSelector implements HlsTrackSelector {
 
   private static final int TYPE_DEFAULT = 0;
   private static final int TYPE_VTT = 1;
+  private static final int TYPE_ALTERNATIVE_AUDIO = 2;
 
   private final Context context;
   private final int type;
@@ -54,6 +55,15 @@ public final class DefaultHlsTrackSelector implements HlsTrackSelector {
     return new DefaultHlsTrackSelector(null, TYPE_VTT);
   }
 
+  /**
+   * Creates a {@link DefaultHlsTrackSelector} that selects alternative audio renditions.
+   *
+   * @return The selector instance.
+   */
+  public static DefaultHlsTrackSelector newAlternativeAudioInstance() {
+    return new DefaultHlsTrackSelector(null, TYPE_ALTERNATIVE_AUDIO);
+  }
+
   private DefaultHlsTrackSelector(Context context, int type) {
     this.context = context;
     this.type = type;
@@ -66,6 +76,16 @@ public final class DefaultHlsTrackSelector implements HlsTrackSelector {
       if (subtitleVariants != null && !subtitleVariants.isEmpty()) {
         for (int i = 0; i < subtitleVariants.size(); i++) {
           output.fixedTrack(playlist, subtitleVariants.get(i));
+        }
+      }
+      return;
+    }
+
+    if (type == TYPE_ALTERNATIVE_AUDIO) {
+      List<Variant> alternativeAudioVariants = playlist.audio;
+      if (alternativeAudioVariants != null && !alternativeAudioVariants.isEmpty()) {
+        for (int i = 0; i < alternativeAudioVariants.size(); i++) {
+          output.fixedTrack(playlist, alternativeAudioVariants.get(i));
         }
       }
       return;
@@ -84,6 +104,7 @@ public final class DefaultHlsTrackSelector implements HlsTrackSelector {
     ArrayList<Variant> definiteAudioOnlyVariants = new ArrayList<>();
     for (int i = 0; i < enabledVariantList.size(); i++) {
       Variant variant = enabledVariantList.get(i);
+      System.out.println("BLAH: Url is " + variant.url);
       if (variant.format.height > 0 || variantHasExplicitCodecWithPrefix(variant, "avc")) {
         definiteVideoVariants.add(variant);
       } else if (variantHasExplicitCodecWithPrefix(variant, "mp4a")) {
