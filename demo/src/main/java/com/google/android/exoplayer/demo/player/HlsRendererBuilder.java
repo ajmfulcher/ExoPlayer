@@ -133,7 +133,7 @@ public class HlsRendererBuilder implements RendererBuilder {
       DefaultBandwidthMeter bandwidthMeter = new DefaultBandwidthMeter();
       PtsTimestampAdjusterProvider timestampAdjusterProvider = new PtsTimestampAdjusterProvider();
 
-      // Build the video/audio/metadata renderers.
+      // Build the video and metadata renderers.
       DataSource dataSource = new DefaultUriDataSource(context, bandwidthMeter, userAgent);
       HlsChunkSource chunkSource = new HlsChunkSource(true /* isMaster */, dataSource, url,
           manifest, DefaultHlsTrackSelector.newDefaultInstance(context), bandwidthMeter,
@@ -146,15 +146,27 @@ public class HlsRendererBuilder implements RendererBuilder {
       MetadataTrackRenderer<List<Id3Frame>> id3Renderer = new MetadataTrackRenderer<>(
           sampleSource, new Id3Parser(), player, mainHandler.getLooper());
 
-      DataSource audioDataSource = new DefaultUriDataSource(context, bandwidthMeter, userAgent);
-      HlsChunkSource audioChunkSource = new HlsChunkSource(false /* isMaster */, audioDataSource, url,
-          manifest, DefaultHlsTrackSelector.newAlternativeAudioInstance(), bandwidthMeter,
-          timestampAdjusterProvider, HlsChunkSource.ADAPTIVE_MODE_SPLICE);
-      HlsSampleSource audioSampleSource = new HlsSampleSource(audioChunkSource, loadControl,
-          MAIN_BUFFER_SEGMENTS * BUFFER_SEGMENT_SIZE, mainHandler, player, DemoPlayer.TYPE_VIDEO);
-      MediaCodecAudioTrackRenderer audioRenderer = new MediaCodecAudioTrackRenderer(audioSampleSource,
-          MediaCodecSelector.DEFAULT, null, true, player.getMainHandler(), player,
-          AudioCapabilities.getCapabilities(context), AudioManager.STREAM_MUSIC);
+      // Build the audio renderer, preferring the alternative audio source where available.
+      boolean preferAlternativeAudio = false;
+      if (manifest instanceof HlsMasterPlaylist) {
+        preferAlternativeAudio = !((HlsMasterPlaylist) manifest).subtitles.isEmpty();
+      }
+      MediaCodecAudioTrackRenderer audioRenderer;
+      if (preferAlternativeAudio) {
+        DataSource audioDataSource = new DefaultUriDataSource(context, bandwidthMeter, userAgent);
+        HlsChunkSource audioChunkSource = new HlsChunkSource(false /* isMaster */, audioDataSource, url,
+            manifest, DefaultHlsTrackSelector.newAlternativeAudioInstance(), bandwidthMeter,
+            timestampAdjusterProvider, HlsChunkSource.ADAPTIVE_MODE_SPLICE);
+        HlsSampleSource audioSampleSource = new HlsSampleSource(audioChunkSource, loadControl,
+            MAIN_BUFFER_SEGMENTS * BUFFER_SEGMENT_SIZE, mainHandler, player, DemoPlayer.TYPE_VIDEO);
+        audioRenderer = new MediaCodecAudioTrackRenderer(audioSampleSource,
+            MediaCodecSelector.DEFAULT, null, true, player.getMainHandler(), player,
+            AudioCapabilities.getCapabilities(context), AudioManager.STREAM_MUSIC);
+      } else {
+        audioRenderer = new MediaCodecAudioTrackRenderer(sampleSource,
+            MediaCodecSelector.DEFAULT, null, true, player.getMainHandler(), player,
+            AudioCapabilities.getCapabilities(context), AudioManager.STREAM_MUSIC);
+      }
 
       // Build the text renderer, preferring Webvtt where available.
       boolean preferWebvtt = false;
