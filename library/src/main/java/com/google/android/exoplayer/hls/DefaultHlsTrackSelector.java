@@ -104,7 +104,6 @@ public final class DefaultHlsTrackSelector implements HlsTrackSelector {
     ArrayList<Variant> definiteAudioOnlyVariants = new ArrayList<>();
     for (int i = 0; i < enabledVariantList.size(); i++) {
       Variant variant = enabledVariantList.get(i);
-      System.out.println("BLAH: Url is " + variant.url);
       if (variant.format.height > 0 || variantHasExplicitCodecWithPrefix(variant, "avc")) {
         definiteVideoVariants.add(variant);
       } else if (variantHasExplicitCodecWithPrefix(variant, "mp4a")) {

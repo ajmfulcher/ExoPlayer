@@ -154,7 +154,6 @@ public final class HlsPlaylistParser implements UriLoadable.Parser<HlsPlaylist> 
       line = iterator.next();
       if (line.startsWith(MEDIA_TAG)) {
         String type = HlsParserUtil.parseStringAttr(line, TYPE_ATTR_REGEX, TYPE_ATTR);
-        System.out.println("BLAH type is: " + type);
         if (SUBTITLES_TYPE.equals(type)) {
           // We assume all subtitles belong to the same group.
           String subtitleName = HlsParserUtil.parseStringAttr(line, NAME_ATTR_REGEX, NAME_ATTR);
@@ -171,7 +170,6 @@ public final class HlsPlaylistParser implements UriLoadable.Parser<HlsPlaylist> 
             Format format = new Format(audioName, MimeTypes.APPLICATION_M3U8, -1, -1, -1, -1, -1,
                 -1, language, codecs);
             audio.add(new Variant(uri, format));
-            System.out.println("BLAH audio details: name : " + audioName + " uri : " + uri + " language : " + language);
           }
         } else {
           // TODO: Support other types of media tag.
